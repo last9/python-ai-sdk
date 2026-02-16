@@ -1,0 +1,135 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "last9-genai"
+version = "1.0.0"
+description = "Last9 observability attributes for OpenTelemetry GenAI spans - track costs, workflows, and conversations in LLM applications"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Last9 Inc.", email = "hello@last9.io"}
+]
+maintainers = [
+    {name = "Last9 Inc.", email = "hello@last9.io"}
+]
+keywords = [
+    "opentelemetry",
+    "genai",
+    "llm",
+    "observability",
+    "last9",
+    "anthropic",
+    "openai",
+    "langchain",
+    "ai",
+    "monitoring",
+    "cost-tracking",
+    "conversation-tracking"
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Monitoring",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "opentelemetry-api>=1.20.0",
+    "opentelemetry-sdk>=1.20.0",
+]
+
+[project.optional-dependencies]
+otlp = [
+    "opentelemetry-exporter-otlp-proto-grpc>=1.20.0",
+]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-asyncio>=1.0.0",
+    "black>=23.0.0",
+    "mypy>=1.0.0",
+    "pylint>=2.17.0",
+]
+# Security: Use secure versions to fix vulnerabilities
+# - langchain-core >= 1.2.11: Fix CVE (SSRF via image_url token counting)
+# - langsmith >= 0.6.3: Fix CVE (SSRF via tracing header injection)
+examples = [
+    "anthropic>=0.3.0",
+    "openai>=1.0.0",
+    "langchain>=1.2.10",      # Includes secure langchain-core
+    "langchain-core>=1.2.11", # Fix SSRF vulnerability
+    "langsmith>=0.6.3",       # Fix SSRF via header injection
+    "fastapi>=0.100.0",
+    "uvicorn>=0.23.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/last9/python-ai-sdk"
+Documentation = "https://github.com/last9/python-ai-sdk#readme"
+Repository = "https://github.com/last9/python-ai-sdk"
+Issues = "https://github.com/last9/python-ai-sdk/issues"
+Changelog = "https://github.com/last9/python-ai-sdk/blob/main/CHANGELOG.md"
+
+[tool.setuptools]
+packages = ["last9_genai"]
+
+[tool.setuptools.package-data]
+last9_genai = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = "--cov=last9_genai --cov-report=html --cov-report=term-missing"
+
+[tool.black]
+line-length = 100
+target-version = ['py39', 'py310', 'py311', 'py312']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+strict_equality = true
+
+[tool.pylint.messages_control]
+max-line-length = 100
+disable = [
+    "missing-docstring",
+    "too-few-public-methods",
+    "too-many-arguments",
+    "too-many-instance-attributes",
+    "too-many-locals",
+]
+
+[dependency-groups]
+dev = [
+    "pytest-asyncio>=1.2.0",
+]

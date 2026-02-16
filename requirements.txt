@@ -1,0 +1,17 @@
+# Core OpenTelemetry packages
+opentelemetry-api>=1.20.0
+opentelemetry-sdk>=1.20.0
+
+# OTLP Exporter for sending traces to Last9/OpenTelemetry backends
+opentelemetry-exporter-otlp-proto-grpc>=1.20.0
+
+# Optional: Instrumentation for popular AI SDKs
+# opentelemetry-instrumentation-requests>=0.41b0
+# opentelemetry-instrumentation-httpx>=0.41b0
+
+# For examples and development
+# anthropic>=0.3.0
+# openai>=1.0.0
+# langchain>=0.3.0
+# langchain-core>=1.2.11  # Security fix: SSRF vulnerability
+# langsmith>=0.6.3  # Security fix: SSRF via tracing header injection
