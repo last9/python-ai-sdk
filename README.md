@@ -56,6 +56,8 @@ See [Working with OTel Auto-Instrumentation](#working-with-otel-auto-instrumenta
 
 ## Installation
 
+### From PyPI (Coming Soon)
+
 **Basic:**
 ```bash
 pip install last9-genai
@@ -64,6 +66,26 @@ pip install last9-genai
 **With OTLP export (recommended):**
 ```bash
 pip install last9-genai[otlp]
+```
+
+### From GitHub (Available Now)
+
+Install the latest version directly from GitHub:
+
+```bash
+# Basic installation
+pip install git+https://github.com/last9/python-ai-sdk.git
+
+# With OTLP export
+pip install "last9-genai[otlp] @ git+https://github.com/last9/python-ai-sdk.git"
+
+# Install specific version (using tags)
+pip install git+https://github.com/last9/python-ai-sdk.git@v1.0.0
+```
+
+**Add to requirements.txt:**
+```txt
+last9-genai @ git+https://github.com/last9/python-ai-sdk.git@v1.0.0
 ```
 
 **Requirements:**
