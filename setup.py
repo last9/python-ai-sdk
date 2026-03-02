@@ -41,28 +41,5 @@ setup(
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
     python_requires=">=3.10",
-    install_requires=[
-        "opentelemetry-api>=1.20.0",
-        "opentelemetry-sdk>=1.20.0",
-    ],
-    extras_require={
-        "otlp": [
-            "opentelemetry-exporter-otlp-proto-grpc>=1.20.0",
-        ],
-        "dev": [
-            "pytest>=7.0.0",
-            "pytest-cov>=4.0.0",
-            "black>=23.0.0",
-            "mypy>=1.0.0",
-            "pylint>=2.17.0",
-        ],
-        "examples": [
-            "anthropic>=0.3.0",
-            "openai>=1.0.0",
-            "langchain>=0.1.0",
-            "fastapi>=0.100.0",
-            "uvicorn>=0.23.0",
-        ],
-    },
     keywords="opentelemetry genai llm observability last9 anthropic openai langchain ai monitoring cost-tracking",
 )
