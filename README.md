@@ -2,8 +2,10 @@
 
 > OpenTelemetry extension for LLM observability: track conversations, workflows, and costs
 
+[![PyPI version](https://img.shields.io/pypi/v/last9-genai.svg)](https://pypi.org/project/last9-genai/)
+[![PyPI downloads](https://img.shields.io/pypi/dm/last9-genai.svg)](https://pypi.org/project/last9-genai/)
+[![Python 3.10+](https://img.shields.io/pypi/pyversions/last9-genai.svg)](https://pypi.org/project/last9-genai/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 
 ## Overview
 
@@ -56,8 +58,6 @@ See [Working with OTel Auto-Instrumentation](#working-with-otel-auto-instrumenta
 
 ## Installation
 
-### From PyPI (Coming Soon)
-
 **Basic:**
 ```bash
 pip install last9-genai
@@ -66,26 +66,6 @@ pip install last9-genai
 **With OTLP export (recommended):**
 ```bash
 pip install last9-genai[otlp]
-```
-
-### From GitHub (Available Now)
-
-Install the latest version directly from GitHub:
-
-```bash
-# Basic installation
-pip install git+https://github.com/last9/python-ai-sdk.git
-
-# With OTLP export
-pip install "last9-genai[otlp] @ git+https://github.com/last9/python-ai-sdk.git"
-
-# Install specific version (using tags)
-pip install git+https://github.com/last9/python-ai-sdk.git@v1.0.0
-```
-
-**Add to requirements.txt:**
-```txt
-last9-genai @ git+https://github.com/last9/python-ai-sdk.git@v1.0.0
 ```
 
 **Requirements:**
