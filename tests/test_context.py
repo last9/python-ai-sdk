@@ -8,6 +8,7 @@ from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
 from last9_genai import (
+    agent_context,
     conversation_context,
     workflow_context,
     propagate_attributes,
@@ -247,6 +248,176 @@ class TestNestedContexts:
         # Innermost context values should be used
         assert spans[0].attributes[GenAIAttributes.CONVERSATION_ID] == "level_2"
         assert spans[0].attributes["workflow.id"] == "wf_level_1"
+
+
+class TestAgentContext:
+    """Test agent_context() context manager"""
+
+    def test_agent_context_basic(self, tracer_setup):
+        """Test basic agent_context with just agent_id"""
+        tracer, memory_exporter = tracer_setup
+
+        with agent_context(agent_id="agent_123"):
+            with tracer.start_as_current_span("test_span"):
+                pass
+
+        spans = memory_exporter.get_finished_spans()
+        assert len(spans) == 1
+        assert spans[0].attributes[GenAIAttributes.AGENT_ID] == "agent_123"
+
+    def test_agent_context_with_all_fields(self, tracer_setup):
+        """Test agent_context with id, name, and version"""
+        tracer, memory_exporter = tracer_setup
+
+        with agent_context(agent_id="bot_v2", agent_name="Support Bot", agent_version="2.0"):
+            with tracer.start_as_current_span("test_span"):
+                pass
+
+        spans = memory_exporter.get_finished_spans()
+        assert len(spans) == 1
+        assert spans[0].attributes[GenAIAttributes.AGENT_ID] == "bot_v2"
+        assert spans[0].attributes[GenAIAttributes.AGENT_NAME] == "Support Bot"
+        assert spans[0].attributes[GenAIAttributes.AGENT_VERSION] == "2.0"
+
+    def test_agent_context_propagates_to_nested_spans(self, tracer_setup):
+        """Test that agent context propagates to all nested spans"""
+        tracer, memory_exporter = tracer_setup
+
+        with agent_context(agent_id="nested_agent", agent_name="Nested"):
+            with tracer.start_as_current_span("parent"):
+                with tracer.start_as_current_span("child"):
+                    pass
+
+        spans = memory_exporter.get_finished_spans()
+        assert len(spans) == 2
+        assert spans[0].attributes[GenAIAttributes.AGENT_ID] == "nested_agent"
+        assert spans[1].attributes[GenAIAttributes.AGENT_ID] == "nested_agent"
+
+    def test_agent_context_cleanup(self, tracer_setup):
+        """Test that agent context is cleaned up after exit"""
+        tracer, memory_exporter = tracer_setup
+
+        with agent_context(agent_id="temp_agent"):
+            context = get_current_context()
+            assert context["agent_id"] == "temp_agent"
+
+        context = get_current_context()
+        assert "agent_id" not in context or context.get("agent_id") != "temp_agent"
+
+    def test_agent_context_override(self, tracer_setup):
+        """Test that inner agent context overrides outer"""
+        tracer, memory_exporter = tracer_setup
+
+        with agent_context(agent_id="outer_agent", agent_name="Outer"):
+            with agent_context(agent_id="inner_agent", agent_name="Inner"):
+                with tracer.start_as_current_span("test_span"):
+                    pass
+
+        spans = memory_exporter.get_finished_spans()
+        assert len(spans) == 1
+        assert spans[0].attributes[GenAIAttributes.AGENT_ID] == "inner_agent"
+        assert spans[0].attributes[GenAIAttributes.AGENT_NAME] == "Inner"
+
+    def test_multi_agent_sequential(self, tracer_setup):
+        """Test sequential agent contexts (multi-agent routing)"""
+        tracer, memory_exporter = tracer_setup
+
+        with agent_context(agent_id="router", agent_name="Router"):
+            with tracer.start_as_current_span("route"):
+                pass
+
+        with agent_context(agent_id="handler", agent_name="Handler"):
+            with tracer.start_as_current_span("handle"):
+                pass
+
+        spans = memory_exporter.get_finished_spans()
+        assert len(spans) == 2
+        assert spans[0].attributes[GenAIAttributes.AGENT_ID] == "router"
+        assert spans[1].attributes[GenAIAttributes.AGENT_ID] == "handler"
+
+    def test_agent_with_conversation_context(self, tracer_setup):
+        """Test agent nested inside conversation"""
+        tracer, memory_exporter = tracer_setup
+
+        with conversation_context(conversation_id="conv_abc", user_id="user_1"):
+            with agent_context(agent_id="agent_xyz", agent_name="Bot"):
+                with tracer.start_as_current_span("test_span"):
+                    pass
+
+        spans = memory_exporter.get_finished_spans()
+        assert len(spans) == 1
+        assert spans[0].attributes[GenAIAttributes.CONVERSATION_ID] == "conv_abc"
+        assert spans[0].attributes["user.id"] == "user_1"
+        assert spans[0].attributes[GenAIAttributes.AGENT_ID] == "agent_xyz"
+        assert spans[0].attributes[GenAIAttributes.AGENT_NAME] == "Bot"
+
+    def test_agent_with_workflow_context(self, tracer_setup):
+        """Test agent nested with workflow"""
+        tracer, memory_exporter = tracer_setup
+
+        with agent_context(agent_id="rag_agent", agent_name="RAG"):
+            with workflow_context(workflow_id="retrieval", workflow_type="rag"):
+                with tracer.start_as_current_span("test_span"):
+                    pass
+
+        spans = memory_exporter.get_finished_spans()
+        assert len(spans) == 1
+        assert spans[0].attributes[GenAIAttributes.AGENT_ID] == "rag_agent"
+        assert spans[0].attributes["workflow.id"] == "retrieval"
+        assert spans[0].attributes["workflow.type"] == "rag"
+
+    def test_agent_conversation_workflow_triple_nesting(self, tracer_setup):
+        """Test all three contexts nested together"""
+        tracer, memory_exporter = tracer_setup
+
+        with conversation_context(conversation_id="session_1"):
+            with agent_context(agent_id="agent_1", agent_name="Agent", agent_version="1.0"):
+                with workflow_context(workflow_id="wf_1"):
+                    with tracer.start_as_current_span("test_span"):
+                        pass
+
+        spans = memory_exporter.get_finished_spans()
+        assert len(spans) == 1
+        assert spans[0].attributes[GenAIAttributes.CONVERSATION_ID] == "session_1"
+        assert spans[0].attributes[GenAIAttributes.AGENT_ID] == "agent_1"
+        assert spans[0].attributes[GenAIAttributes.AGENT_NAME] == "Agent"
+        assert spans[0].attributes[GenAIAttributes.AGENT_VERSION] == "1.0"
+        assert spans[0].attributes["workflow.id"] == "wf_1"
+
+    def test_multi_agent_in_conversation(self, tracer_setup):
+        """Test multiple agents within same conversation (handoff pattern)"""
+        tracer, memory_exporter = tracer_setup
+
+        with conversation_context(conversation_id="session_handoff"):
+            with agent_context(agent_id="router_v1", agent_name="Router"):
+                with tracer.start_as_current_span("classify"):
+                    pass
+
+            with agent_context(agent_id="support_v2", agent_name="Support"):
+                with tracer.start_as_current_span("respond"):
+                    pass
+
+        spans = memory_exporter.get_finished_spans()
+        assert len(spans) == 2
+
+        # Both have same conversation, different agents
+        assert spans[0].attributes[GenAIAttributes.CONVERSATION_ID] == "session_handoff"
+        assert spans[0].attributes[GenAIAttributes.AGENT_ID] == "router_v1"
+        assert spans[0].attributes[GenAIAttributes.AGENT_NAME] == "Router"
+
+        assert spans[1].attributes[GenAIAttributes.CONVERSATION_ID] == "session_handoff"
+        assert spans[1].attributes[GenAIAttributes.AGENT_ID] == "support_v2"
+        assert spans[1].attributes[GenAIAttributes.AGENT_NAME] == "Support"
+
+    def test_agent_context_no_span(self, tracer_setup):
+        """Test agent_context works even without spans"""
+        tracer, memory_exporter = tracer_setup
+
+        with agent_context(agent_id="no_span_agent"):
+            pass
+
+        spans = memory_exporter.get_finished_spans()
+        assert len(spans) == 0
 
 
 class TestPropagateAttributes:
