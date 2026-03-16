@@ -144,6 +144,16 @@ class Last9SpanProcessor(SpanProcessor):
         if "workflow_type" in context:
             span.set_attribute("workflow.type", context["workflow_type"])
 
+        # Add agent attributes (OTel GenAI semantic conventions)
+        if "agent_id" in context:
+            span.set_attribute(GenAIAttributes.AGENT_ID, context["agent_id"])
+
+        if "agent_name" in context:
+            span.set_attribute(GenAIAttributes.AGENT_NAME, context["agent_name"])
+
+        if "agent_version" in context:
+            span.set_attribute(GenAIAttributes.AGENT_VERSION, context["agent_version"])
+
         # Add any custom attributes
         for key, value in context.items():
             if key not in [
@@ -152,6 +162,9 @@ class Last9SpanProcessor(SpanProcessor):
                 "user_id",
                 "workflow_id",
                 "workflow_type",
+                "agent_id",
+                "agent_name",
+                "agent_version",
             ]:
                 span.set_attribute(f"custom.{key}", str(value))
 

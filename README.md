@@ -15,6 +15,7 @@
 
 **Key Features:**
 - 🎯 **Conversation Tracking**: Automatic multi-turn conversation tracking with `conversation_context`
+- 🤖 **Agent Tracking**: First-class agent identity with `agent_context` (OTel `gen_ai.agent.*` semantic conventions)
 - 🔄 **Workflow Management**: Track complex multi-step AI workflows with `workflow_context`
 - 🎨 **Zero-Touch Instrumentation**: `@observe()` decorator for automatic tracking
 - 📊 **Context Propagation**: Thread-safe attribute tracking across nested operations
@@ -25,6 +26,7 @@
 
 ### Core Tracking
 - 🎯 **Conversation Tracking**: Multi-turn conversations with `gen_ai.conversation.id` and turn numbers
+- 🤖 **Agent Identity**: Track agents with `gen_ai.agent.id`, `gen_ai.agent.name`, `gen_ai.agent.version` (OTel semantic conventions)
 - 🔄 **Workflow Management**: Track multi-step AI operations across LLM calls, tools, and retrievals
 - 📊 **Auto-Context Propagation**: Thread-safe context managers that automatically tag all nested operations
 - 🎨 **Decorator Pattern**: `@observe()` for zero-touch instrumentation with full input/output/latency tracking
@@ -141,6 +143,31 @@ with conversation_context(conversation_id="support_123"):
     with workflow_context(workflow_id="order_lookup"):
         # Both conversation AND workflow tracked automatically
         result = lookup_and_respond()
+```
+
+### Track Agents
+
+Track agent identity using [OTel GenAI semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-agent-spans/) (`gen_ai.agent.*`):
+
+```python
+from last9_genai import agent_context
+
+# Track agent identity — all child spans get gen_ai.agent.* attributes
+with agent_context(agent_id="support_bot_v2", agent_name="Support Bot", agent_version="2.0"):
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role": "user", "content": "Help me with my order"}]
+    )
+    # Span automatically has gen_ai.agent.id, gen_ai.agent.name, gen_ai.agent.version
+
+# Nest with conversations for full context
+with conversation_context(conversation_id="session_123", user_id="user_456"):
+    with agent_context(agent_id="router_agent", agent_name="Router"):
+        route = classify_intent(query)
+
+    with agent_context(agent_id="support_agent", agent_name="Support"):
+        response = handle_support(query)
+    # Each agent's spans are tagged separately, both share the conversation
 ```
 
 ### Decorator Pattern (Zero-Touch)
@@ -479,6 +506,11 @@ workflow.llm_calls = 3
 # Conversation
 gen_ai.conversation.id = "session_123"
 gen_ai.conversation.turn_number = 2
+
+# Agent (OTel GenAI semantic conventions)
+gen_ai.agent.id = "support_bot_v2"
+gen_ai.agent.name = "Support Bot"
+gen_ai.agent.version = "2.0"
 ```
 
 ## Model Pricing
@@ -569,6 +601,7 @@ See [`examples/`](./examples/) directory:
 
 **Advanced:**
 - [`conversation_tracking.py`](./examples/conversation_tracking.py) - Multi-turn conversations
+- [`agent_tracking.py`](./examples/agent_tracking.py) - Agent identity tracking with OTel semantic conventions
 
 ## Contributing
 
