@@ -85,7 +85,9 @@ def multi_agent_routing_example():
             print(f"   Router: {intent['response']}")
 
         # Specialist agent handles the request
-        with agent_context(agent_id="refund_agent_v3", agent_name="Refund Agent", agent_version="3.1"):
+        with agent_context(
+            agent_id="refund_agent_v3", agent_name="Refund Agent", agent_version="3.1"
+        ):
             response = simulate_llm_call(tracer, "gpt-4o", "Process refund for order #12345")
             print(f"   Refund Agent: {response['response']}")
 
@@ -134,4 +136,5 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Error: {e}")
         import traceback
+
         traceback.print_exc()
