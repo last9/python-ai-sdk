@@ -52,6 +52,7 @@ class Last9SpanProcessor(SpanProcessor):
         custom_pricing: Optional[Dict[str, ModelPricing]] = None,
         enable_cost_tracking: bool = True,
         workflow_tracker=None,
+        log_processor=None,
     ):
         """
         Initialize the span processor.
@@ -60,10 +61,13 @@ class Last9SpanProcessor(SpanProcessor):
             custom_pricing: Dictionary of model pricing
             enable_cost_tracking: Whether to calculate and add cost attributes
             workflow_tracker: Optional workflow cost tracker instance
+            log_processor: Optional Last9LogToSpanProcessor whose per-span counter
+                state should be released when a span ends.
         """
         self.custom_pricing = custom_pricing
         self.enable_cost_tracking = enable_cost_tracking
         self.workflow_tracker = workflow_tracker
+        self.log_processor = log_processor
 
     def on_start(self, span: "Span", parent_context: Optional[Context] = None) -> None:
         """
@@ -87,6 +91,11 @@ class Last9SpanProcessor(SpanProcessor):
         Args:
             span: The span that just ended (read-only)
         """
+        if self.log_processor is not None:
+            ctx = span.get_span_context()
+            if ctx.is_valid:
+                self.log_processor.cleanup_span(ctx.span_id)
+
         if not span.attributes:
             return
 

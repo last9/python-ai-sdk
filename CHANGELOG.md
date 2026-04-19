@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-04-20
+
+### Added
+- **`Last9LogToSpanProcessor`**: new OTel `LogRecordProcessor` that promotes
+  GenAI log events emitted by `opentelemetry-instrumentation-openai-v2` (new
+  GenAI semconv) onto the currently active span as both flat span attributes
+  and indexed attributes so the Last9 LLM dashboard renders prompts,
+  completions, and tool calls.
+  - Flat attrs: `gen_ai.prompt`, `gen_ai.completion` (JSON arrays)
+  - Span events: `gen_ai.content.prompt`, `gen_ai.content.completion`
+  - Indexed attrs: `gen_ai.prompt.{i}.*`, `gen_ai.completion.{i}.*`
+    (AgentOps / Traceloop compatible)
+- `Last9SpanProcessor` now accepts an optional `log_processor=` kwarg; per-span
+  counter state in the bridge is released when its span ends.
+
+### Fixed
+- LLM dashboard now shows user/assistant/tool messages for apps using the new
+  GenAI semconv (openai-v2) — previously these payloads were only emitted as
+  log records and never reached the dashboard.
+
+### Notes
+- Python 3.14 users must pin `wrapt<2` because
+  `opentelemetry-instrumentation-openai-v2` 2.3b0 calls
+  `wrap_function_wrapper(module=..., name=..., wrapper=...)` and wrapt 2.0
+  renamed the first kwarg to `target=`. Without the pin, instrumentation fails
+  silently and no log events are emitted.
+
 ## [1.0.0] - 2026-02-14
 
 ### Added
