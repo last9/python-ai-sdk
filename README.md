@@ -301,6 +301,54 @@ print(f"Cost: ${cost.total:.6f}")
 
 **Result**: You get standard OTel attributes (automatic) + Last9 cost/workflow (manual).
 
+### Capturing Prompts, Completions, and Tool Calls
+
+`opentelemetry-instrumentation-openai-v2` (v2.x) follows the new OpenTelemetry
+GenAI semantic conventions and emits message content, tool calls, and
+completions as **OTel log events**, not as span attributes. The Last9 LLM
+dashboard reads span attributes / events, so without a bridge those payloads
+never reach the dashboard.
+
+`Last9LogToSpanProcessor` listens to those log events and promotes their
+payloads onto the currently active span:
+
+- `gen_ai.prompt` (JSON array of prompt messages)
+- `gen_ai.completion` (JSON array of completion choices)
+- span events `gen_ai.content.prompt` / `gen_ai.content.completion`
+- indexed `gen_ai.prompt.{i}.*` / `gen_ai.completion.{i}.*` (AgentOps /
+  Traceloop compatible)
+
+```python
+from opentelemetry import trace, _logs
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk._logs import LoggerProvider
+from opentelemetry.instrumentation.openai_v2 import OpenAIInstrumentor
+
+from last9_genai import Last9SpanProcessor, Last9LogToSpanProcessor
+
+log_bridge = Last9LogToSpanProcessor()
+
+tracer_provider = TracerProvider()
+tracer_provider.add_span_processor(Last9SpanProcessor(log_processor=log_bridge))
+trace.set_tracer_provider(tracer_provider)
+
+logger_provider = LoggerProvider()
+logger_provider.add_log_record_processor(log_bridge)
+_logs.set_logger_provider(logger_provider)
+
+import os
+os.environ["OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT"] = "true"
+OpenAIInstrumentor().instrument(logger_provider=logger_provider)
+```
+
+After this, every LLM call instrumented by `openai-v2` has its full prompt
+and completion content available on the span.
+
+> **Python 3.14 users**: pin `wrapt<2`. `opentelemetry-instrumentation-openai-v2`
+> 2.3b0 calls `wrap_function_wrapper(module=..., name=..., wrapper=...)` and
+> wrapt 2.0 renamed the first kwarg to `target=`. Without the pin,
+> instrumentation fails silently and no log events are emitted.
+
 ## Usage Examples
 
 ### Multi-Turn Conversations
