@@ -26,7 +26,6 @@ from typing import Any, Dict, List
 from opentelemetry import trace
 from opentelemetry.sdk._logs import LogRecordProcessor, ReadWriteLogRecord
 
-
 GEN_AI_PROMPT_EVENTS = {
     "gen_ai.system.message": "system",
     "gen_ai.user.message": "user",
@@ -67,9 +66,7 @@ class Last9LogToSpanProcessor(LogRecordProcessor):
             return
 
         with self._lock:
-            state = self._state.setdefault(
-                ctx.span_id, {"prompts": [], "completions": []}
-            )
+            state = self._state.setdefault(ctx.span_id, {"prompts": [], "completions": []})
 
             if event_name == GEN_AI_CHOICE_EVENT:
                 idx = len(state["completions"])
@@ -130,33 +127,25 @@ class Last9LogToSpanProcessor(LogRecordProcessor):
     def _set_prompt_indexed(self, span, idx: int, entry: dict, body: dict) -> None:
         span.set_attribute(f"gen_ai.prompt.{idx}.role", entry["role"])
         if "content" in entry:
-            span.set_attribute(
-                f"gen_ai.prompt.{idx}.content", self._truncate(entry["content"])
-            )
+            span.set_attribute(f"gen_ai.prompt.{idx}.content", self._truncate(entry["content"]))
         if "tool_calls" in entry:
             span.set_attribute(
                 f"gen_ai.prompt.{idx}.tool_calls", self._truncate(entry["tool_calls"])
             )
         if "tool_call_id" in entry:
-            span.set_attribute(
-                f"gen_ai.prompt.{idx}.tool_call.id", str(entry["tool_call_id"])
-            )
+            span.set_attribute(f"gen_ai.prompt.{idx}.tool_call.id", str(entry["tool_call_id"]))
 
     def _set_completion_indexed(self, span, idx: int, entry: dict, body: dict) -> None:
         span.set_attribute(f"gen_ai.completion.{idx}.role", entry["role"])
         if "content" in entry:
-            span.set_attribute(
-                f"gen_ai.completion.{idx}.content", self._truncate(entry["content"])
-            )
+            span.set_attribute(f"gen_ai.completion.{idx}.content", self._truncate(entry["content"]))
         if "tool_calls" in entry:
             span.set_attribute(
                 f"gen_ai.completion.{idx}.tool_calls",
                 self._truncate(entry["tool_calls"]),
             )
         if "finish_reason" in entry:
-            span.set_attribute(
-                f"gen_ai.completion.{idx}.finish_reason", entry["finish_reason"]
-            )
+            span.set_attribute(f"gen_ai.completion.{idx}.finish_reason", entry["finish_reason"])
         if "index" in entry:
             span.set_attribute(f"gen_ai.completion.{idx}.index", entry["index"])
 
