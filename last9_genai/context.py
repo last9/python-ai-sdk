@@ -17,6 +17,7 @@ _workflow_id: ContextVar[Optional[str]] = ContextVar("workflow_id", default=None
 _workflow_type: ContextVar[Optional[str]] = ContextVar("workflow_type", default=None)
 _agent_id: ContextVar[Optional[str]] = ContextVar("agent_id", default=None)
 _agent_name: ContextVar[Optional[str]] = ContextVar("agent_name", default=None)
+_agent_description: ContextVar[Optional[str]] = ContextVar("agent_description", default=None)
 _agent_version: ContextVar[Optional[str]] = ContextVar("agent_version", default=None)
 _custom_attributes: ContextVar[Dict[str, Any]] = ContextVar("custom_attributes", default={})
 
@@ -88,6 +89,10 @@ def get_current_context() -> Dict[str, Any]:
     if agent_name is not None:
         context["agent_name"] = agent_name
 
+    agent_description = _agent_description.get()
+    if agent_description is not None:
+        context["agent_description"] = agent_description
+
     agent_version = _agent_version.get()
     if agent_version is not None:
         context["agent_version"] = agent_version
@@ -111,6 +116,7 @@ def clear_context() -> None:
     _workflow_type.set(None)
     _agent_id.set(None)
     _agent_name.set(None)
+    _agent_description.set(None)
     _agent_version.set(None)
     _conversation_turn.set(None)
     _custom_attributes.set({})
@@ -233,47 +239,60 @@ def workflow_context(
 
 @contextmanager
 def agent_context(
-    agent_id: str,
-    agent_name: Optional[str] = None,
+    agent_name: str,
+    agent_id: Optional[str] = None,
+    agent_description: Optional[str] = None,
     agent_version: Optional[str] = None,
     **custom_attrs,
 ):
     """
     Context manager for agent tracking using OTel GenAI semantic conventions.
 
-    All spans created within this context will automatically have
-    gen_ai.agent.id, gen_ai.agent.name, and gen_ai.agent.version attributes.
+    All spans created within this context automatically receive
+    ``gen_ai.agent.name`` (plus id/description/version when provided).
 
     Args:
-        agent_id: Unique agent identifier (gen_ai.agent.id)
-        agent_name: Human-readable agent name (gen_ai.agent.name)
-        agent_version: Agent version (gen_ai.agent.version)
-        **custom_attrs: Additional custom attributes
+        agent_name: Human-readable agent name (``gen_ai.agent.name``).
+            Required per OTel semconv.
+        agent_id: Unique agent identifier (``gen_ai.agent.id``). Recommended.
+        agent_description: Agent description (``gen_ai.agent.description``).
+        agent_version: Agent version (``gen_ai.agent.version``).
+        **custom_attrs: Additional custom attributes.
+
+    Note on coexistence with native-instrumented agent frameworks:
+        Frameworks like AutoGen (``autogen-core``) and the OpenAI Agents SDK
+        set ``gen_ai.agent.name`` / ``gen_ai.agent.description`` directly on
+        their own ``invoke_agent`` / ``create_agent`` spans. Because
+        :class:`Last9SpanProcessor` sets these in ``on_start``, the framework
+        can overwrite them inside the span body. For those framework spans,
+        the framework's own agent identity wins — ``agent_context`` still
+        tags all sibling/child spans (LLM calls, tool calls, custom spans)
+        with the values passed here.
 
     Example:
         ```python
-        with agent_context(agent_id="agent_123", agent_name="Support Bot", agent_version="2.0"):
-            # All spans automatically tagged with gen_ai.agent.id
+        with agent_context(agent_name="Support Bot", agent_id="bot_v2", agent_version="2.0"):
             response = client.chat.completions.create(...)
         ```
 
-        # Can be nested with conversation and workflow contexts:
         ```python
         with conversation_context(conversation_id="session_123"):
-            with agent_context(agent_id="agent_xyz", agent_name="Router"):
-                # Both conversation AND agent tracked
+            with agent_context(agent_name="Router", agent_id="router_v1"):
                 result = route_request(query)
         ```
     """
     prev_agent_id = _agent_id.get()
     prev_agent_name = _agent_name.get()
+    prev_agent_description = _agent_description.get()
     prev_agent_version = _agent_version.get()
     prev_custom = _custom_attributes.get()
 
     try:
-        _agent_id.set(agent_id)
-        if agent_name is not None:
-            _agent_name.set(agent_name)
+        _agent_name.set(agent_name)
+        if agent_id is not None:
+            _agent_id.set(agent_id)
+        if agent_description is not None:
+            _agent_description.set(agent_description)
         if agent_version is not None:
             _agent_version.set(agent_version)
         if custom_attrs:
@@ -286,5 +305,7 @@ def agent_context(
     finally:
         _agent_id.set(prev_agent_id)
         _agent_name.set(prev_agent_name)
+        _agent_description.set(prev_agent_description)
         _agent_version.set(prev_agent_version)
+        _custom_attributes.set(prev_custom)
         _custom_attributes.set(prev_custom)

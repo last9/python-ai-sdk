@@ -254,22 +254,27 @@ class TestAgentContext:
     """Test agent_context() context manager"""
 
     def test_agent_context_basic(self, tracer_setup):
-        """Test basic agent_context with just agent_id"""
+        """Test basic agent_context with just agent_name"""
         tracer, memory_exporter = tracer_setup
 
-        with agent_context(agent_id="agent_123"):
+        with agent_context(agent_name="Agent"):
             with tracer.start_as_current_span("test_span"):
                 pass
 
         spans = memory_exporter.get_finished_spans()
         assert len(spans) == 1
-        assert spans[0].attributes[GenAIAttributes.AGENT_ID] == "agent_123"
+        assert spans[0].attributes[GenAIAttributes.AGENT_NAME] == "Agent"
 
     def test_agent_context_with_all_fields(self, tracer_setup):
-        """Test agent_context with id, name, and version"""
+        """Test agent_context with name, id, description, version"""
         tracer, memory_exporter = tracer_setup
 
-        with agent_context(agent_id="bot_v2", agent_name="Support Bot", agent_version="2.0"):
+        with agent_context(
+            agent_name="Support Bot",
+            agent_id="bot_v2",
+            agent_description="Handles support tickets",
+            agent_version="2.0",
+        ):
             with tracer.start_as_current_span("test_span"):
                 pass
 
@@ -277,6 +282,7 @@ class TestAgentContext:
         assert len(spans) == 1
         assert spans[0].attributes[GenAIAttributes.AGENT_ID] == "bot_v2"
         assert spans[0].attributes[GenAIAttributes.AGENT_NAME] == "Support Bot"
+        assert spans[0].attributes[GenAIAttributes.AGENT_DESCRIPTION] == "Handles support tickets"
         assert spans[0].attributes[GenAIAttributes.AGENT_VERSION] == "2.0"
 
     def test_agent_context_propagates_to_nested_spans(self, tracer_setup):
@@ -297,7 +303,7 @@ class TestAgentContext:
         """Test that agent context is cleaned up after exit"""
         tracer, memory_exporter = tracer_setup
 
-        with agent_context(agent_id="temp_agent"):
+        with agent_context(agent_name="Temp", agent_id="temp_agent"):
             context = get_current_context()
             assert context["agent_id"] == "temp_agent"
 
@@ -413,11 +419,36 @@ class TestAgentContext:
         """Test agent_context works even without spans"""
         tracer, memory_exporter = tracer_setup
 
-        with agent_context(agent_id="no_span_agent"):
+        with agent_context(agent_name="NoSpan", agent_id="no_span_agent"):
             pass
 
         spans = memory_exporter.get_finished_spans()
         assert len(spans) == 0
+
+    def test_agent_description_propagates(self, tracer_setup):
+        """agent_description reaches spans as gen_ai.agent.description"""
+        tracer, memory_exporter = tracer_setup
+
+        with agent_context(agent_name="Describer", agent_description="Explains things clearly"):
+            with tracer.start_as_current_span("test_span"):
+                pass
+
+        spans = memory_exporter.get_finished_spans()
+        assert len(spans) == 1
+        assert spans[0].attributes[GenAIAttributes.AGENT_DESCRIPTION] == "Explains things clearly"
+
+    def test_agent_custom_attrs_restored_on_exit(self, tracer_setup):
+        """Custom attrs set via agent_context are restored to outer scope on exit"""
+        tracer, memory_exporter = tracer_setup
+
+        with propagate_attributes(outer="value"):
+            with agent_context(agent_name="A", inner="scoped"):
+                assert get_current_context().get("inner") == "scoped"
+                assert get_current_context().get("outer") == "value"
+
+            # Outer scope preserved after inner agent_context exits
+            assert get_current_context().get("outer") == "value"
+            assert "inner" not in get_current_context()
 
 
 class TestPropagateAttributes:

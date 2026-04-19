@@ -151,8 +151,6 @@ class Operations:
     EMBEDDINGS = "embeddings"
     TEXT_COMPLETION = "text.completion"
     TOOL_CALL = "tool.call"
-    CREATE_AGENT = "create_agent"
-    INVOKE_AGENT = "invoke_agent"
 
 
 class Providers:
