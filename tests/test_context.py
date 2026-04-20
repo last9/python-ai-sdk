@@ -301,8 +301,8 @@ class TestAgentContext:
 
     def test_agent_context_cleanup(self, tracer_setup):
         """Test that agent context is cleaned up after exit"""
-        tracer, memory_exporter = tracer_setup
-
+        # Fixture sets up the tracer/exporter; this test only asserts on
+        # contextvars state, so the returned handles are unused.
         with agent_context(agent_name="Temp", agent_id="temp_agent"):
             context = get_current_context()
             assert context["agent_id"] == "temp_agent"
@@ -417,7 +417,7 @@ class TestAgentContext:
 
     def test_agent_context_no_span(self, tracer_setup):
         """Test agent_context works even without spans"""
-        tracer, memory_exporter = tracer_setup
+        _, memory_exporter = tracer_setup
 
         with agent_context(agent_name="NoSpan", agent_id="no_span_agent"):
             pass
@@ -439,8 +439,8 @@ class TestAgentContext:
 
     def test_agent_custom_attrs_restored_on_exit(self, tracer_setup):
         """Custom attrs set via agent_context are restored to outer scope on exit"""
-        tracer, memory_exporter = tracer_setup
-
+        # Fixture still needs to run for Last9SpanProcessor setup; no span/exporter
+        # handles used in this test.
         with propagate_attributes(outer="value"):
             with agent_context(agent_name="A", inner="scoped"):
                 assert get_current_context().get("inner") == "scoped"
