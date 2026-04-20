@@ -59,6 +59,7 @@ from last9_genai.context import (
     propagate_attributes,
     conversation_context,
     workflow_context,
+    agent_context,
     get_current_context,
     clear_context,
 )
@@ -96,6 +97,7 @@ __all__ = [
     "propagate_attributes",
     "conversation_context",
     "workflow_context",
+    "agent_context",
     "get_current_context",
     "clear_context",
     # Span processor

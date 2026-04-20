@@ -88,6 +88,12 @@ class GenAIAttributes:
     PROMPT_HASH = "gen_ai.prompt.hash"
     PROMPT_TEMPLATE_ID = "gen_ai.prompt.template_id"
 
+    # Agent attributes (OTel GenAI semantic conventions - experimental)
+    AGENT_ID = "gen_ai.agent.id"
+    AGENT_NAME = "gen_ai.agent.name"
+    AGENT_DESCRIPTION = "gen_ai.agent.description"
+    AGENT_VERSION = "gen_ai.agent.version"
+
     # Tool attributes
     TOOL_NAME = "gen_ai.tool.name"
     TOOL_TYPE = "gen_ai.tool.type"

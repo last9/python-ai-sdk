@@ -23,6 +23,7 @@ from last9_genai import (
     ModelPricing,
     conversation_context,
     workflow_context,
+    agent_context,
     propagate_attributes,
 )
 
@@ -202,11 +203,35 @@ def fastapi_pattern_example():
     print("      - Zero manual attribute setting!")
 
 
+def agent_context_example():
+    """Agent identity tracking with OTel semantic conventions"""
+    tracer = setup_tracing()
+
+    print("\n🔄 Example 5: Agent identity tracking\n")
+
+    with conversation_context(conversation_id="multi_agent_session", user_id="user_agent"):
+        # Router agent
+        with agent_context(agent_id="router_v1", agent_name="Router Agent"):
+            simulate_llm_call(tracer, "gpt-3.5-turbo", "Classify user intent")
+            print("   ✅ Router agent classified intent")
+
+        # Specialist agent
+        with agent_context(agent_id="support_v2", agent_name="Support Agent", agent_version="2.0"):
+            simulate_llm_call(tracer, "gpt-4o", "Handle support request")
+            print("   ✅ Support agent handled request")
+
+    print("\n   Agent spans automatically have:")
+    print("      - gen_ai.agent.id (unique per agent)")
+    print("      - gen_ai.agent.name (human-readable)")
+    print("      - gen_ai.agent.version (when provided)")
+    print("      - gen_ai.conversation.id (from parent context)")
+
+
 def multi_turn_conversation_example():
     """Example with turn numbers"""
     tracer = setup_tracing()
 
-    print("\n🔄 Example 5: Multi-turn conversation with turn tracking\n")
+    print("\n🔄 Example 6: Multi-turn conversation with turn tracking\n")
 
     conversation_id = "multi_turn_session"
     messages = ["Hello!", "What's the weather?", "Thank you!"]
@@ -236,6 +261,7 @@ if __name__ == "__main__":
         nested_workflow_example()
         propagate_attributes_example()
         fastapi_pattern_example()
+        agent_context_example()
         multi_turn_conversation_example()
 
         # Force export of spans

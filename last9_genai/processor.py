@@ -12,6 +12,23 @@ from opentelemetry.context import Context
 from .context import get_current_context
 from .core import GenAIAttributes, Last9Attributes, calculate_llm_cost, ModelPricing
 
+# Keys consumed by typed branches in _add_context_attributes_on_start; anything
+# else in get_current_context() is emitted as custom.{key}. Centralized here so
+# adding a new context var updates both sides in one place.
+_RESERVED_CONTEXT_KEYS = frozenset(
+    {
+        "conversation_id",
+        "turn_number",
+        "user_id",
+        "workflow_id",
+        "workflow_type",
+        "agent_id",
+        "agent_name",
+        "agent_description",
+        "agent_version",
+    }
+)
+
 
 class Last9SpanProcessor(SpanProcessor):
     """
@@ -153,15 +170,22 @@ class Last9SpanProcessor(SpanProcessor):
         if "workflow_type" in context:
             span.set_attribute("workflow.type", context["workflow_type"])
 
-        # Add any custom attributes
+        # Add agent attributes (OTel GenAI semantic conventions)
+        if "agent_id" in context:
+            span.set_attribute(GenAIAttributes.AGENT_ID, context["agent_id"])
+
+        if "agent_name" in context:
+            span.set_attribute(GenAIAttributes.AGENT_NAME, context["agent_name"])
+
+        if "agent_description" in context:
+            span.set_attribute(GenAIAttributes.AGENT_DESCRIPTION, context["agent_description"])
+
+        if "agent_version" in context:
+            span.set_attribute(GenAIAttributes.AGENT_VERSION, context["agent_version"])
+
+        # Add any custom attributes (keys not claimed by a typed context var above)
         for key, value in context.items():
-            if key not in [
-                "conversation_id",
-                "turn_number",
-                "user_id",
-                "workflow_id",
-                "workflow_type",
-            ]:
+            if key not in _RESERVED_CONTEXT_KEYS:
                 span.set_attribute(f"custom.{key}", str(value))
 
     def _track_workflow_cost(self, span: ReadableSpan) -> None:
