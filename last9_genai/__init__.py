@@ -34,7 +34,7 @@ Usage:
 For more information, see: https://github.com/last9/python-ai-sdk
 """
 
-__version__ = "1.2.0"
+__version__ = "1.3.0"
 __author__ = "Last9 Inc."
 __license__ = "MIT"
 
@@ -70,6 +70,9 @@ from last9_genai.processor import Last9SpanProcessor
 # Import log-to-span bridge for GenAI log events
 from last9_genai.log_processor import Last9LogToSpanProcessor
 
+# One-call setup helper
+from last9_genai.install import install, InstallHandle
+
 # Import decorators (auto-tracking)
 from last9_genai.decorators import observe
 
@@ -104,6 +107,9 @@ __all__ = [
     "Last9SpanProcessor",
     # Log-to-span bridge
     "Last9LogToSpanProcessor",
+    # One-call setup helper
+    "install",
+    "InstallHandle",
     # Decorators (NEW)
     "observe",
 ]
