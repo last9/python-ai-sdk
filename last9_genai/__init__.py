@@ -34,7 +34,7 @@ Usage:
 For more information, see: https://github.com/last9/python-ai-sdk
 """
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 __author__ = "Last9 Inc."
 __license__ = "MIT"
 

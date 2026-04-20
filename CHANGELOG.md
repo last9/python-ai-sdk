@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-04-20
+
+### Added
+- **`agent_context()`**: new context manager for OTel GenAI semantic-convention
+  agent identity attributes (`gen_ai.agent.id`, `gen_ai.agent.name`,
+  `gen_ai.agent.description`, `gen_ai.agent.version`). All spans created inside
+  the context are auto-tagged by `Last9SpanProcessor`, matching the shape
+  OpenAI Agents SDK and `autogen-core` emit natively on their own agent spans.
+- `agent_context` composes with `conversation_context()` and
+  `workflow_context()`; covered by tests for triple-nesting, multi-agent
+  handoff (same conversation), inner-overrides-outer, and mixed-exit order.
+
+### Notes
+- `agent_name` is the only required argument (per OTel semconv).
+  `agent_id` / `agent_description` / `agent_version` are optional.
+- Native-instrumented agent spans (e.g. AutoGen's `invoke_agent`,
+  OpenAI Agents SDK) set `gen_ai.agent.*` directly inside the span body and
+  will override values from `agent_context`. Sibling and child spans still
+  receive `agent_context`'s values.
+
 ## [1.1.0] - 2026-04-20
 
 ### Added

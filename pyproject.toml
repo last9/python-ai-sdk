@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "last9-genai"
-version = "1.1.0"
+version = "1.2.0"
 description = "Last9 observability attributes for OpenTelemetry GenAI spans - track costs, workflows, and conversations in LLM applications"
 readme = "README.md"
 license = "MIT"
