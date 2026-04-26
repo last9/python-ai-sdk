@@ -2,8 +2,7 @@
 
 import os
 
-import pytest
-from opentelemetry import _logs, trace
+from opentelemetry import _logs
 from opentelemetry.sdk._logs import LoggerProvider
 from opentelemetry.sdk.trace import TracerProvider
 
