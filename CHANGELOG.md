@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-04-20
+
+### Added
+- **`install()`** one-call setup helper that wires `TracerProvider`,
+  `LoggerProvider`, `Last9SpanProcessor`, `Last9LogToSpanProcessor`, the
+  `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT` env var, and
+  `OpenAIInstrumentor().instrument(logger_provider=...)` (when
+  `opentelemetry-instrumentation-openai-v2` is installed). Collapses the
+  typical six-line boilerplate to a single call.
+- `install()` returns an `InstallHandle` dataclass so callers can reach the
+  provider (to attach exporters) and call `shutdown()`.
+- Accepts caller-provided `tracer_provider` / `logger_provider`, forwards
+  cost-tracking kwargs (`custom_pricing`, `enable_cost_tracking`, …) through
+  to `Last9SpanProcessor`, and can be opted out of instrumentation / global
+  registration.
+
 ## [1.2.0] - 2026-04-20
 
 ### Added

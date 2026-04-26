@@ -345,6 +345,29 @@ payloads onto the currently active span:
 - indexed `gen_ai.prompt.{i}.*` / `gen_ai.completion.{i}.*` (AgentOps /
   Traceloop compatible)
 
+**Recommended (one call):**
+
+```python
+from last9_genai import install
+
+handle = install()
+
+# add your OTLP exporter to the returned provider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+handle.tracer_provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter()))
+```
+
+`install()` creates the TracerProvider + LoggerProvider if they don't exist
+(pass your own via `tracer_provider=` / `logger_provider=`), wires
+`Last9SpanProcessor` and `Last9LogToSpanProcessor` together, sets
+`OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true`, and calls
+`OpenAIInstrumentor().instrument(logger_provider=...)` if openai-v2 is
+installed. Pass `instrument_openai=False` if you want to wire instrumentation
+yourself.
+
+**Manual wiring (same result, when you need more control):**
+
 ```python
 from opentelemetry import trace, _logs
 from opentelemetry.sdk.trace import TracerProvider
@@ -368,8 +391,8 @@ os.environ["OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT"] = "true"
 OpenAIInstrumentor().instrument(logger_provider=logger_provider)
 ```
 
-After this, every LLM call instrumented by `openai-v2` has its full prompt
-and completion content available on the span.
+Either path: every LLM call instrumented by `openai-v2` now has its full
+prompt and completion content available on the span.
 
 > **Python 3.14 users**: pin `wrapt<2`. `opentelemetry-instrumentation-openai-v2`
 > 2.3b0 calls `wrap_function_wrapper(module=..., name=..., wrapper=...)` and
