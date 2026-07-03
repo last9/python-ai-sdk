@@ -69,3 +69,6 @@ dmyp.json
 .claude/
 test_telemetry.py
 send_test_spans.py
+
+# Brainstorm/plan docs — local-only, not pushed to the repo
+docs/
